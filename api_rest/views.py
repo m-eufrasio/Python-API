@@ -12,6 +12,15 @@ import json
 
 @api_view(['GET'])
 def get_users(request):
+  """Example of GET
+
+  Args:
+      request (string): http verbs;
+
+  Returns:
+      Response - JSON: user datas;
+      Response - Exception: 400;
+  """
 
 # PEGANDO DADOS:
   if request.method == 'GET': # Verificação, não é obrigatório mas é uma boa prática
@@ -24,6 +33,17 @@ def get_users(request):
 
 @api_view(['GET', 'PUT'])
 def get_by_nick(request, nick): # O nick é aquele declarado na rota para capturar um usuário específico
+  """Examples of GET and PUT
+
+  Args:
+      request (string): http verbs;
+      nick (object): primary key;
+
+  Returns:
+      Response - JSON: user datas
+      Response - Exception: 400 - 404
+      Response - Success: 202
+  """
 
 # PEGANDO DADOS ESPECÍFICOS:
   try:
@@ -46,71 +66,94 @@ def get_by_nick(request, nick): # O nick é aquele declarado na rota para captur
     
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def user_manager(request):
+  """CRUD of app
+
+  Args:
+      request (string): http verbs;
+
+  Returns:
+      Response - JSON: one user or a list of them;
+      Response - Exception: 400 - 404;
+      Response - Success: 201 - 202;
+  """
 
   # ACESSOS:
 
-    if request.method == 'GET':
+    # if request.method == 'GET':
 
-      try:
-        if request.GET['user']: # Verifica se existe um parâmetro chamado user (/user=xxxx)
+    #   try:
+    #     if request.GET['user']: # Verifica se existe um parâmetro chamado user (/user=xxxx)
 
-            user_nickname = request.GET['user'] # Encontra esse parâmetro
+    #         user_nickname = request.GET['user'] # Encontra esse parâmetro
 
-            try:
-              user = User.objects.get(pk=user_nickname) # Pega o objeto do database
-            except:
-              return Response(status=status.HTTP_404_NOT_FOUND)
+    #         try:
+    #           user = User.objects.get(pk=user_nickname) # Pega o objeto do database
+    #         except:
+    #           return Response(status=status.HTTP_404_NOT_FOUND)
 
+    #         serializer = UserSerializer(user) # Serializa o objeto para JSON
+    #         return Response(serializer.data) # Retorna o objeto serializado como response
+
+    #     else:
+    #       return Response(status=status.HTTP_400_BAD_REQUEST)
+    
+    #   except:
+    #     return Response(status=status.HTTP_400_BAD_REQUEST)
+      
+  if request.method == 'GET':
+    user_nickname = request.GET.get('user') # Para evitar exceções se a chave não existir. Verifica se existe um parâmetro chamado user (/user=xxxx)
+    if user_nickname:
+        try:
+            user = User.objects.get(pk=user_nickname) # Pega o objeto do database
             serializer = UserSerializer(user) # Serializa o objeto para JSON
             return Response(serializer.data) # Retorna o objeto serializado como response
-
-        else:
-          return Response(status=status.HTTP_400_BAD_REQUEST)
-    
-      except:
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-  # CRIANDO DADOS:
-    if request.method == 'POST':
 
-      new_user = request.data # Acessa os dados enviados do frontend
+# CRIANDO DADOS:
+  if request.method == 'POST':
 
-      serializer = UserSerializer(data=new_user) # Nesse ponto é serializado DADOS e não OBJETOS!
+    new_user = request.data # Acessa os dados enviados do frontend
 
-      if serializer.is_valid(): # is_valid() é uma função do Serializer que verifica se os dados são válidos
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED) # Para validar, retorna os dados e status 201
-      
+    serializer = UserSerializer(data=new_user) # Nesse ponto é serializado DADOS e não OBJETOS!
+
+    if serializer.is_valid(): # is_valid() é uma função do Serializer que verifica se os dados são válidos
+      serializer.save()
+      return Response(serializer.data, status=status.HTTP_201_CREATED) # Para validar, retorna os dados e status 201
+    
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+  
+# EDITANDO DADOS
+  
+  if request.method == 'PUT':
+
+    nickname = request.data['user_nickname']
+
+    try:
+      updated_user = User.objects.get(pk=nickname)
+    except:
+      return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = UserSerializer(updated_user, data=request.data)
+
+    if serializer.is_valid():
+      serializer.save()
+      return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+    
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+  
+# DELETANDO DADOS
+
+  if request.method == 'DELETE':
+
+    try:
+      user_to_delete = User.objects.get(pk=request.data['user_nickname'])
+      user_to_delete.delete()
+    except:
       return Response(status=status.HTTP_400_BAD_REQUEST)
-    
-  # EDITANDO DADOS
-    
-    if request.method == 'PUT':
-
-      nickname = request.data['user_nickname']
-
-      try:
-        updated_user = User.objects.get(pk=nickname)
-      except:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-      
-      serializer = UserSerializer(updated_user, data=request.data)
-
-      if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-      
-      return Response(status=status.HTTP_400_BAD_REQUEST)
-    
-  # DELETANDO DADOS
-
-    if request.method == 'DELETE':
-
-      try:
-        user_to_delete = User.objects.get(pk=request.data['user_nickname'])
-        user_to_delete.delete()
-      except:
-        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 
