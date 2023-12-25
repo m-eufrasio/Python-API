@@ -8,4 +8,4 @@ class User(models.Model):
   user_age = models.IntegerField(default=0)
 
   def __str__(self):
-    return f'Nickname: {self.user_nickname} | E-mail: {self.user.user_email}'
+    return f'Nickname: {self.user_nickname} | E-mail: {self.user_email}'
