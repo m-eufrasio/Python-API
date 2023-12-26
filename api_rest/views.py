@@ -5,10 +5,31 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+# Serialização da obtenção de pares de tokens (access token e refresh token) durante o processo de autenticação.
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from .models import User
 from .serializers import UserSerializer
 
 import json
+
+# Essa classe sobrescreve TokenObtainPairSerializer para personalização
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+  @classmethod # Defini um método de classe, que é chamar um método dentro da classe sem instanciá-la
+  # cls é a classe, que precisa ser passada como o primeiro argumento desse tipo de método
+  def get_token(cls, user): # get_token serve para criar a customização
+    token = super().get_token(user) # Chama o método get_token da classe pai (TokenObtainPairSerializer) para obter o token padrão.
+
+    # Add custom claims
+    token['name'] = user.name
+    # ...
+
+    return token
+
+# TokenObtainPairView é uma view do Simple JWT que trata pares de tokens  
+class MyTokenObtainPairView(TokenObtainPairView):
+  serialize_class = MyTokenObtainPairSerializer
 
 @api_view(['GET'])
 def get_users(request):
